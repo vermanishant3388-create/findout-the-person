@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width,initial-scale=1.0"
+>
+
+<title>
+    FINDOUT THE PERSON - DASHBOARD
+</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+
+    margin:0;
+
+    background:#020708;
+
+    color:#00ffff;
+
+    font-family:Arial,sans-serif;
+
+}
+
+.header{
+
+    height:70px;
+
+    border-bottom:
+        1px solid #00ffff;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:0 25px;
+
+}
+
+.title{
+
+    font-size:22px;
+
+    letter-spacing:3px;
+
+    font-weight:bold;
+
+}
+
+.online{
+
+    font-size:12px;
+
+    letter-spacing:2px;
+
+}
+
+.container{
+
+    display:grid;
+
+    grid-template-columns:
+        260px 1fr 260px;
+
+    gap:15px;
+
+    padding:15px;
+
+}
+
+.panel{
+
+    border:
+        1px solid #00ffff;
+
+    background:
+        rgba(0,20,24,.75);
+
+    min-height:160px;
+
+    padding:18px;
+
+}
+
+.panel h3{
+
+    margin-top:0;
+
+    font-size:13px;
+
+    letter-spacing:2px;
+
+}
+
+.big{
+
+    font-size:60px;
+
+    font-weight:bold;
+
+    text-align:center;
+
+    margin:25px 0;
+
+}
+
+.center{
+
+    min-height:520px;
+
+    position:relative;
+
+    overflow:hidden;
+
+}
+
+.feed{
+
+    position:absolute;
+
+    inset:20px;
+
+    border:
+        1px dashed #00ffff;
+
+    overflow:hidden;
+
+}
+
+#hud{
+
+    position:absolute;
+
+    inset:0;
+
+}
+
+.feedMessage{
+
+    position:absolute;
+
+    inset:0;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    text-align:center;
+
+    font-size:18px;
+
+    letter-spacing:2px;
+
+    pointer-events:none;
+
+}
+
+.statusRow{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin:14px 0;
+
+    font-size:12px;
+
+}
+
+.good{
+    color:#00ff88;
+}
+
+.bad{
+    color:#ff4444;
+}
+
+.bottom{
+
+    margin:
+        0 15px 15px;
+
+    display:grid;
+
+    grid-template-columns:
+        1fr 1fr 1fr;
+
+    gap:15px;
+
+}
+
+.event{
+
+    border:
+        1px solid #00ffff;
+
+    padding:15px;
+
+    min-height:110px;
+
+}
+
+button{
+
+    width:100%;
+
+    padding:13px;
+
+    margin-top:10px;
+
+    background:#00181c;
+
+    border:
+        1px solid #00ffff;
+
+    color:#00ffff;
+
+    cursor:pointer;
+
+}
+
+button:hover{
+
+    background:#00343a;
+
+}
+
+.personBox{
+
+    position:absolute;
+
+    border:
+        2px solid #00ffff;
+
+    border-radius:50%;
+
+    box-shadow:
+        0 0 15px rgba(0,255,255,.6);
+
+}
+
+.personLabel{
+
+    position:absolute;
+
+    top:-25px;
+
+    left:0;
+
+    padding:5px 8px;
+
+    background:
+        rgba(0,20,25,.9);
+
+    border:
+        1px solid #00ffff;
+
+    font-size:10px;
+
+    white-space:nowrap;
+
+}
+
+@media(max-width:900px){
+
+    .container{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .bottom{
+
+        grid-template-columns:1fr;
+
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="title">
+        FINDOUT THE PERSON
+    </div>
+
+    <div
+        class="online"
+        id="serverStatus"
+    >
+        SERVER CONNECTING...
+    </div>
+
+</header>
+
+
+<div class="container">
+
+
+<!-- LEFT -->
+
+<div>
+
+    <div class="panel">
+
+        <h3>
+            DETECTED PERSONS
+        </h3>
+
+        <div
+            class="big"
+            id="personCount"
+        >
+            0
+        </div>
+
+    </div>
+
+
+    <div class="panel">
+
+        <h3>
+            SYSTEM
+        </h3>
+
+        <div class="statusRow">
+
+            <span>
+                CAMERA
+            </span>
+
+            <span
+                id="cameraStatus"
+                class="bad"
+            >
+                OFFLINE
+            </span>
+
+        </div>
+
+
+        <div class="statusRow">
+
+            <span>
+                AI ENGINE
+            </span>
+
+            <span class="good">
+                ONLINE
+            </span>
+
+        </div>
+
+
+        <div class="statusRow">
+
+            <span>
+                DATA LINK
+            </span>
+
+            <span
+                id="dataStatus"
+                class="bad"
+            >
+                WAITING
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- CENTER -->
+
+<div class="panel center">
+
+    <div class="feed">
+
+        <div id="hud"></div>
+
+        <div
+            class="feedMessage"
+            id="feedMessage"
+        >
+            CAMERA FEED<br>
+            NOT CONNECTED
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- RIGHT -->
+
+<div>
+
+    <div class="panel">
+
+        <h3>
+            CONNECTION
+        </h3>
+
+
+        <div class="statusRow">
+
+            <span>
+                SERVER
+            </span>
+
+            <span
+                id="serverNode"
+                class="bad"
+            >
+                OFFLINE
+            </span>
+
+        </div>
+
+
+        <div class="statusRow">
+
+            <span>
+                CAMERA NODE
+            </span>
+
+            <span
+                id="cameraNode"
+                class="bad"
+            >
+                OFFLINE
+            </span>
+
+        </div>
+
+
+        <div class="statusRow">
+
+            <span>
+                DATA
+            </span>
+
+            <span
+                id="dataNode"
+                class="bad"
+            >
+                OFFLINE
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="panel">
+
+        <h3>
+            SESSION
+        </h3>
+
+
+        <div class="statusRow">
+
+            <span>
+                SESSION
+            </span>
+
+            <span>
+                LIVE
+            </span>
+
+        </div>
+
+
+        <div class="statusRow">
+
+            <span>
+                UPTIME
+            </span>
+
+            <span id="uptime">
+                00:00:00
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+
+<div class="bottom">
+
+
+<div class="event">
+
+    <strong>
+        DETECTION EVENTS
+    </strong>
+
+    <p id="eventText">
+        Waiting for camera...
+    </p>
+
+</div>
+
+
+<div class="event">
+
+    <strong>
+        LIVE DATA
+    </strong>
+
+    <p>
+        PERSON COUNT:
+        <span id="liveCount">
+            0
+        </span>
+    </p>
+
+    <p>
+        LAST UPDATE:
+        <span id="lastUpdate">
+            --
+        </span>
+    </p>
+
+</div>
+
+
+<div class="event">
+
+    <strong>
+        CONTROLS
+    </strong>
+
+    <button
+        onclick="connectServer()"
+    >
+        CONNECT CAMERA
+    </button>
+
+    <button
+        onclick="location.reload()"
+    >
+        RESET SESSION
+    </button>
+
+</div>
+
+</div>
+
+
+<script>
+
+/*
+==================================================
+CHANGE THIS AFTER RENDER DEPLOYMENT
+==================================================
+*/
+
+const SERVER_URL =
+    "wss://YOUR-SERVER-NAME.onrender.com";
+
+
+let socket = null;
+
+let startTime =
+    Date.now();
+
+
+const serverStatus =
+    document.getElementById(
+        "serverStatus"
+    );
+
+const cameraStatus =
+    document.getElementById(
+        "cameraStatus"
+    );
+
+const personCount =
+    document.getElementById(
+        "personCount"
+    );
+
+const liveCount =
+    document.getElementById(
+        "liveCount"
+    );
+
+const dataStatus =
+    document.getElementById(
+        "dataStatus"
+    );
+
+const feedMessage =
+    document.getElementById(
+        "feedMessage"
+    );
+
+const eventText =
+    document.getElementById(
+        "eventText"
+    );
+
+const serverNode =
+    document.getElementById(
+        "serverNode"
+    );
+
+const cameraNode =
+    document.getElementById(
+        "cameraNode"
+    );
+
+const dataNode =
+    document.getElementById(
+        "dataNode"
+    );
+
+const lastUpdate =
+    document.getElementById(
+        "lastUpdate"
+    );
+
+const hud =
+    document.getElementById(
+        "hud"
+    );
+
+
+// ==========================================
+// CONNECT
+// ==========================================
+
+function connectServer(){
+
+    if(
+        !SERVER_URL ||
+        SERVER_URL.includes("YOUR-SERVER")
+    ){
+
+        serverStatus.textContent =
+            "SERVER URL NOT SET";
+
+        return;
+
+    }
+
+
+    if(
+        socket &&
+        socket.readyState === WebSocket.OPEN
+    ){
+
+        return;
+
+    }
+
+
+    socket =
+        new WebSocket(
+            SERVER_URL
+        );
+
+
+    socket.onopen = () => {
+
+        serverStatus.textContent =
+            "SERVER ONLINE";
+
+        serverStatus.style.color =
+            "#00ff88";
+
+
+        serverNode.textContent =
+            "ONLINE";
+
+        serverNode.className =
+            "good";
+
+
+        socket.send(
+            JSON.stringify({
+                type:
+                    "dashboard_register"
+            })
+        );
+
+    };
+
+
+    socket.onmessage =
+        (event) => {
+
+        const data =
+            JSON.parse(
+                event.data
+            );
+
+
+        // --------------------------
+        // CAMERA STATUS
+        // --------------------------
+
+        if(
+            data.type ===
+            "camera_status"
+        ){
+
+            if(
+                data.status ===
+                "online"
+            ){
+
+                cameraStatus.textContent =
+                    "ONLINE";
+
+                cameraStatus.className =
+                    "good";
+
+
+                cameraNode.textContent =
+                    "ONLINE";
+
+                cameraNode.className =
+                    "good";
+
+
+                feedMessage.innerHTML =
+                    "CAMERA CONNECTED<br>" +
+                    "WAITING FOR DETECTION";
+
+            }
+
+            else{
+
+                cameraStatus.textContent =
+                    "OFFLINE";
+
+                cameraStatus.className =
+                    "bad";
+
+
+                cameraNode.textContent =
+                    "OFFLINE";
+
+                cameraNode.className =
+                    "bad";
+
+
+                feedMessage.innerHTML =
+                    "CAMERA FEED<br>" +
+                    "NOT CONNECTED";
+
+
+                clearHUD();
+
+            }
+
+        }
+
+
+        // --------------------------
+        // DETECTION
+        // --------------------------
+
+        if(
+            data.type ===
+            "detections"
+        ){
+
+            const count =
+                Number(data.count) || 0;
+
+
+            personCount.textContent =
+                count;
+
+
+            liveCount.textContent =
+                count;
+
+
+            dataStatus.textContent =
+                "LIVE";
+
+            dataStatus.className =
+                "good";
+
+
+            dataNode.textContent =
+                "LIVE";
+
+            dataNode.className =
+                "good";
+
+
+            lastUpdate.textContent =
+                new Date(
+                    data.timestamp ||
+                    Date.now()
+                ).toLocaleTimeString();
+
+
+            eventText.textContent =
+                count +
+                " person(s) detected";
+
+
+            feedMessage.innerHTML =
+                count > 0
+                    ? "LIVE AI DETECTION"
+                    : "CAMERA LINK ACTIVE";
+
+
+            drawHUD(
+                Array.isArray(data.persons)
+                    ? data.persons
+                    : []
+            );
+
+        }
+
+
+        // --------------------------
+        // INITIAL DATA
+        // --------------------------
+
+        if(
+            data.type ===
+            "initial_data"
+        ){
+
+            if(
+                data.camera ===
+                "online"
+            ){
+
+                cameraStatus.textContent =
+                    "ONLINE";
+
+                cameraStatus.className =
+                    "good";
+
+
+                cameraNode.textContent =
+                    "ONLINE";
+
+                cameraNode.className =
+                    "good";
+
+            }
+
+
+            if(data.detection){
+
+                const count =
+                    data.detection.count ||
+                    0;
+
+
+                personCount.textContent =
+                    count;
+
+
+                liveCount.textContent =
+                    count;
+
+
+                drawHUD(
+                    data.detection.persons ||
+                    []
+                );
+
+            }
+
+        }
+
+    };
+
+
+    socket.onclose = () => {
+
+        serverStatus.textContent =
+            "SERVER OFFLINE";
+
+        serverStatus.style.color =
+            "#ff4444";
+
+
+        serverNode.textContent =
+            "OFFLINE";
+
+        serverNode.className =
+            "bad";
+
+
+        dataNode.textContent =
+            "OFFLINE";
+
+        dataNode.className =
+            "bad";
+
+
+        setTimeout(
+            connectServer,
+            4000
+        );
+
+    };
+
+
+    socket.onerror = () => {
+
+        serverStatus.textContent =
+            "CONNECTION ERROR";
+
+    };
+
+}
+
+
+// ==========================================
+// DRAW HUD
+// ==========================================
+
+function drawHUD(persons){
+
+    clearHUD();
+
+
+    const feedWidth =
+        hud.clientWidth;
+
+    const feedHeight =
+        hud.clientHeight;
+
+
+    /*
+       Camera sends original video pixels.
+       Normalize them before drawing.
+    */
+
+    const sourceWidth =
+        1280;
+
+    const sourceHeight =
+        720;
+
+
+    persons.forEach(
+        (person,index) => {
+
+            const x =
+                (person.x /
+                sourceWidth) *
+                feedWidth;
+
+
+            const y =
+                (person.y /
+                sourceHeight) *
+                feedHeight;
+
+
+            const width =
+                (person.width /
+                sourceWidth) *
+                feedWidth;
+
+
+            const height =
+                (person.height /
+                sourceHeight) *
+                feedHeight;
+
+
+            const box =
+                document.createElement(
+                    "div"
+                );
+
+
+            box.className =
+                "personBox";
+
+
+            box.style.left =
+                `${x}px`;
+
+
+            box.style.top =
+                `${y}px`;
+
+
+            box.style.width =
+                `${Math.max(
+                    35,
+                    width
+                )}px`;
+
+
+            box.style.height =
+                `${Math.max(
+                    55,
+                    height
+                )}px`;
+
+
+            const label =
+                document.createElement(
+                    "div"
+                );
+
+
+            label.className =
+                "personLabel";
+
+
+            label.textContent =
+                `PERSON ${index + 1} ` +
+                `${(
+                    (person.score || 0) *
+                    100
+                ).toFixed(0)}%`;
+
+
+            box.appendChild(
+                label
+            );
+
+
+            hud.appendChild(
+                box
+            );
+
+        }
+    );
+
+}
+
+
+function clearHUD(){
+
+    hud.innerHTML =
+        "";
+
+}
+
+
+// ==========================================
+// UPTIME
+// ==========================================
+
+setInterval(() => {
+
+    const seconds =
+        Math.floor(
+            (
+                Date.now() -
+                startTime
+            ) / 1000
+        );
+
+
+    const h =
+        String(
+            Math.floor(
+                seconds / 3600
+            )
+        ).padStart(2,"0");
+
+
+    const m =
+        String(
+            Math.floor(
+                (seconds % 3600) / 60
+            )
+        ).padStart(2,"0");
+
+
+    const s =
+        String(
+            seconds % 60
+        ).padStart(2,"0");
+
+
+    document.getElementById(
+        "uptime"
+    ).textContent =
+        `${h}:${m}:${s}`;
+
+},1000);
+
+
+connectServer();
+
+</script>
+
+</body>
+
+</html>
