@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width,initial-scale=1.0,user-scalable=no"
+>
+
+<title>FINDOUT THE PERSON - CAMERA</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+html,
+body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#000;
+    font-family:Arial,sans-serif;
+}
+
+#camera{
+    position:fixed;
+    inset:0;
+
+    width:100%;
+    height:100%;
+
+    object-fit:cover;
+}
+
+#overlay{
+    position:fixed;
+    inset:0;
+
+    width:100%;
+    height:100%;
+
+    pointer-events:none;
+}
+
+#top{
+    position:fixed;
+
+    top:15px;
+    left:15px;
+    right:15px;
+
+    display:flex;
+    justify-content:space-between;
+
+    z-index:10;
+}
+
+.status{
+
+    padding:9px 14px;
+
+    border:1px solid #00ffff;
+
+    background:rgba(0,20,25,.75);
+
+    color:#00ffff;
+
+    font-size:12px;
+
+    letter-spacing:1px;
+}
+
+#persons{
+
+    position:fixed;
+
+    bottom:25px;
+    left:20px;
+
+    z-index:10;
+
+    padding:12px 18px;
+
+    border:1px solid #00ffff;
+
+    background:rgba(0,15,20,.8);
+
+    color:#00ffff;
+
+    font-size:17px;
+
+    font-weight:bold;
+}
+
+#loading{
+
+    position:fixed;
+
+    inset:0;
+
+    background:#000;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    z-index:100;
+
+    color:#00ffff;
+}
+
+.spinner{
+
+    width:55px;
+    height:55px;
+
+    border:3px solid rgba(0,255,255,.2);
+
+    border-top-color:#00ffff;
+
+    border-radius:50%;
+
+    animation:spin 1s linear infinite;
+
+    margin-bottom:20px;
+}
+
+@keyframes spin{
+
+    to{
+        transform:rotate(360deg);
+    }
+
+}
+
+#start{
+
+    position:fixed;
+
+    left:50%;
+    bottom:25px;
+
+    transform:translateX(-50%);
+
+    z-index:20;
+
+    padding:13px 25px;
+
+    border:1px solid #00ffff;
+
+    background:#001519;
+
+    color:#00ffff;
+
+    font-weight:bold;
+
+    letter-spacing:1px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="loading">
+
+    <div class="spinner"></div>
+
+    <div>
+        LOADING AI MODEL...
+    </div>
+
+</div>
+
+<video
+    id="camera"
+    autoplay
+    playsinline
+    muted
+></video>
+
+<canvas id="overlay"></canvas>
+
+<div id="top">
+
+    <div class="status">
+        AI PERSON DETECTION
+    </div>
+
+    <div
+        class="status"
+        id="connection"
+    >
+        SERVER OFFLINE
+    </div>
+
+</div>
+
+<div id="persons">
+
+    PERSONS:
+    <span id="personCount">0</span>
+
+</div>
+
+<button id="start">
+    START CAMERA
+</button>
+
+<script>
+
+/*
+==================================================
+CHANGE THIS AFTER RENDER DEPLOYMENT
+==================================================
+
+Example:
+
+const SERVER_URL =
+    "wss://findout-the-person-server.onrender.com";
+
+DO NOT add /camera.html here.
+==================================================
+*/
+
+const SERVER_URL =
+    "wss://YOUR-SERVER-NAME.onrender.com";
+
+
+const video =
+    document.getElementById("camera");
+
+const canvas =
+    document.getElementById("overlay");
+
+const ctx =
+    canvas.getContext("2d");
+
+const loading =
+    document.getElementById("loading");
+
+const startButton =
+    document.getElementById("start");
+
+const personCount =
+    document.getElementById("personCount");
+
+const connectionText =
+    document.getElementById("connection");
+
+
+let model = null;
+
+let stream = null;
+
+let socket = null;
+
+let lastSend = 0;
+
+
+// ==========================================
+// LOAD AI
+// ==========================================
+
+async function loadAI(){
+
+    try{
+
+        model =
+            await cocoSsd.load({
+                base: "mobilenet_v2"
+            });
+
+        loading.style.display =
+            "none";
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        loading.innerHTML =
+            "<div>AI MODEL FAILED TO LOAD</div>";
+
+    }
+
+}
+
+
+// ==========================================
+// START CAMERA
+// ==========================================
+
+async function startCamera(){
+
+    try{
+
+        stream =
+            await navigator.mediaDevices.getUserMedia({
+
+                video:{
+                    facingMode:{
+                        ideal:"environment"
+                    },
+
+                    width:{
+                        ideal:1280
+                    },
+
+                    height:{
+                        ideal:720
+                    }
+                },
+
+                audio:false
+
+            });
+
+
+        video.srcObject =
+            stream;
+
+        startButton.style.display =
+            "none";
+
+
+        connectServer();
+
+
+        video.onloadedmetadata = () => {
+
+            canvas.width =
+                video.videoWidth;
+
+            canvas.height =
+                video.videoHeight;
+
+            detectPeople();
+
+        };
+
+    }
+    catch(error){
+
+        alert(
+            "Camera permission required.\n\n" +
+            error.message
+        );
+
+    }
+
+}
+
+
+// ==========================================
+// SERVER CONNECTION
+// ==========================================
+
+function connectServer(){
+
+    if(
+        !SERVER_URL ||
+        SERVER_URL.includes("YOUR-SERVER")
+    ){
+
+        connectionText.textContent =
+            "SERVER URL NOT SET";
+
+        return;
+
+    }
+
+
+    if(
+        socket &&
+        socket.readyState === WebSocket.OPEN
+    ){
+        return;
+    }
+
+
+    try{
+
+        socket =
+            new WebSocket(SERVER_URL);
+
+    }
+    catch(error){
+
+        connectionText.textContent =
+            "SERVER ERROR";
+
+        return;
+
+    }
+
+
+    socket.onopen = () => {
+
+        connectionText.textContent =
+            "SERVER ONLINE";
+
+        socket.send(
+            JSON.stringify({
+                type:"camera_register"
+            })
+        );
+
+    };
+
+
+    socket.onclose = () => {
+
+        connectionText.textContent =
+            "SERVER OFFLINE";
+
+        setTimeout(
+            connectServer,
+            4000
+        );
+
+    };
+
+
+    socket.onerror = () => {
+
+        connectionText.textContent =
+            "CONNECTION ERROR";
+
+    };
+
+}
+
+
+// ==========================================
+// AI DETECTION
+// ==========================================
+
+async function detectPeople(){
+
+    if(
+        !model ||
+        video.readyState < 2
+    ){
+
+        requestAnimationFrame(
+            detectPeople
+        );
+
+        return;
+
+    }
+
+
+    const predictions =
+        await model.detect(video);
+
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    const persons =
+        predictions.filter(
+            p =>
+                p.class === "person" &&
+                p.score >= 0.50
+        );
+
+
+    personCount.textContent =
+        persons.length;
+
+
+    const detectionData = [];
+
+
+    persons.forEach(
+        (person,index) => {
+
+            const [
+                x,
+                y,
+                width,
+                height
+            ] = person.bbox;
+
+
+            detectionData.push({
+
+                x,
+                y,
+                width,
+                height,
+
+                score:
+                    Number(
+                        person.score.toFixed(3)
+                    )
+
+            });
+
+
+            drawPerson(
+                x,
+                y,
+                width,
+                height,
+                person.score,
+                index + 1
+            );
+
+        }
+    );
+
+
+    sendDetectionData(
+        detectionData
+    );
+
+
+    requestAnimationFrame(
+        detectPeople
+    );
+
+}
+
+
+// ==========================================
+// DRAW PERSON
+// ==========================================
+
+function drawPerson(
+    x,
+    y,
+    width,
+    height,
+    score,
+    number
+){
+
+    ctx.strokeStyle =
+        "#00ffff";
+
+    ctx.lineWidth =
+        3;
+
+
+    ctx.beginPath();
+
+
+    ctx.ellipse(
+
+        x + width / 2,
+
+        y + height / 2,
+
+        width * .48,
+
+        height * .48,
+
+        0,
+
+        0,
+
+        Math.PI * 2
+
+    );
+
+
+    ctx.stroke();
+
+
+    const size = 22;
+
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(x,y + size);
+
+    ctx.lineTo(x,y);
+
+    ctx.lineTo(x + size,y);
+
+
+    ctx.moveTo(
+        x + width - size,
+        y
+    );
+
+    ctx.lineTo(
+        x + width,
+        y
+    );
+
+    ctx.lineTo(
+        x + width,
+        y + size
+    );
+
+
+    ctx.moveTo(
+        x,
+        y + height - size
+    );
+
+    ctx.lineTo(
+        x,
+        y + height
+    );
+
+    ctx.lineTo(
+        x + size,
+        y + height
+    );
+
+
+    ctx.moveTo(
+        x + width - size,
+        y + height
+    );
+
+    ctx.lineTo(
+        x + width,
+        y + height
+    );
+
+    ctx.lineTo(
+        x + width,
+        y + height - size
+    );
+
+
+    ctx.stroke();
+
+
+    ctx.fillStyle =
+        "rgba(0,20,25,.85)";
+
+
+    ctx.fillRect(
+        x,
+        Math.max(0,y - 30),
+        135,
+        27
+    );
+
+
+    ctx.fillStyle =
+        "#00ffff";
+
+
+    ctx.font =
+        "bold 13px Arial";
+
+
+    ctx.fillText(
+
+        `PERSON ${number} ${(score*100).toFixed(0)}%`,
+
+        x + 7,
+
+        Math.max(18,y - 11)
+
+    );
+
+}
+
+
+// ==========================================
+// SEND DATA
+// ==========================================
+
+function sendDetectionData(persons){
+
+    const now =
+        Date.now();
+
+
+    // Maximum 10 updates/sec
+
+    if(
+        now - lastSend < 100
+    ){
+        return;
+    }
+
+
+    lastSend =
+        now;
+
+
+    if(
+        socket &&
+        socket.readyState === WebSocket.OPEN
+    ){
+
+        socket.send(
+            JSON.stringify({
+
+                type:"detections",
+
+                count:
+                    persons.length,
+
+                persons:
+                    persons
+
+            })
+        );
+
+    }
+
+}
+
+
+startButton.addEventListener(
+    "click",
+    startCamera
+);
+
+
+loadAI();
+
+</script>
+
+</body>
+
+</html>
